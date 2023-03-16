@@ -80,3 +80,22 @@ foreach ($exchangeServer in $exchangeServers) {
     #enable new certificate on each exchange server for services POP3,IMAP,SMTP and IIS Site
     Enable-ExchangeCertificate -Server $exchangeServer -Thumbprint $cert.Thumbprint -Services POP,IMAP,IIS,SMTP -Force
 }
+
+$RxCs=Get-ReceiveConnector
+$TxCs=Get-SendConnector
+
+foreach($RxC in $RxCs){
+  if($null -ne $RxC.TlsCertificateName){
+    $ExCert = Get-ExchangeCertificate -Thumbprint "$($cert.Thumbprint)"
+    $TLSCertificateName = "<i>$($ExCert.Issuer)<s>$($ExCert.Subject)"
+    Set-ReceiveConnector -Identity $($RxC.Identity) -TlsCertificateName $TLSCertificateName
+  }
+}
+
+foreach($TxC in $TxCs){
+  if($null -ne $TxC.TlsCertificateName){
+    $ExCert = Get-ExchangeCertificate -Thumbprint "$($cert.Thumbprint)"
+    $TLSCertificateName = "<i>$($ExCert.Issuer)<s>$($ExCert.Subject)"
+    Set-ReceiveConnector -Identity $($TxC.Identity) -TlsCertificateName $TLSCertificateName
+  }
+}
