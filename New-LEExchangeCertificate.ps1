@@ -46,7 +46,7 @@ if(((Get-Module -ListAvailable | Where-Object {$_.Name -eq "PoSh-ACME"}).count) 
 Set-PAServer LE_STAGE
 
 #if first time using PoSh-ACME, create ACME-Account with mail, accept terms of use and set private key to rsa
-if(!((Get-PAAccount -List).count) -ge 1){
+if(!((Get-PAAccount -List).id.count) -ge 1){
     New-PAAccount -AcceptTOS -Contact $certMail -KeyLength 4096
 }
 
@@ -67,16 +67,16 @@ if((Get-PACertificate $certNames[0]).Subject.count -eq 0){
 $cert = Get-PACertificate -MainDomain $certNames[0]
 
 #copy new certificate in either a temp folder or a cert database
-Copy-Item -Path $cert.CertFile -Destination $certFilePath
+Copy-Item -Path $cert.PfxFile -Destination $certFilePath
+
+#get newest Cert FileData
+$certData = Get-Content -Encoding byte -ReadCount 0 $certFilePath
 
 #enable new certificate on all servers
 foreach ($exchangeServer in $exchangeServers) {
-    #copy new certificate on each exchange server
-    Copy-Item $certFilePath "\\$exchangeServer\c$\cert.pfx"
-
     #import new certificate on each exchange server
-    Import-ExchangeCertificate -Server $exchangeServer -FileName "C:\cert.pfx" -Password $certPw
+    Import-ExchangeCertificate -Server $exchangeServer -FileData $certData -Password $certPw
 
     #enable new certificate on each exchange server for services POP3,IMAP,SMTP and IIS Site
-    Enable-ExchangeCertificate -Server $exchangeServer -Thumbprint $cert -Services POP,IMAP,IIS,SMTP
+    Enable-ExchangeCertificate -Server $exchangeServer -Thumbprint $cert.Thumbprint -Services POP,IMAP,IIS,SMTP -Force
 }
