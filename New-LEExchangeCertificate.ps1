@@ -8,10 +8,12 @@
 .OUTPUTS
   Die aktuelle Zertifikatsdatei wird unter $certFilePath auf der ausführenden Maschine und unter "C:\cert.pfx" auf allen Exchange Servern abgelegt. 
 .NOTES
-  Version:          1.0
+  Version:          1.1
   Autor:            Tobias Hertel
-  Erstelldatum:     13.03.2023
-  Zweck:            Erstmalige Erstellung des Scripts
+  Änderungsdatum:     22.03.2023
+  Zweck:            Hinzufügen der http-01-Verifizierung
+  Versionsverlauf:
+    - 1.0 - 13.03.2023 - Erstmalige Erstellung des Scripts
 #>
 
 #edit the following variables
@@ -29,9 +31,13 @@
   #your plugin names
   #all plugins: AcmeDns,Active24,Akamai,Aliyun,All-Inkl,Aurora,AutoDNS,Azure,Beget,BlueCat,Bunny,Cloudflare,ClouDNS,Combell,Constellix,CoreNetworks,DeSEC,DMEasy,DNSimple,DNSPod,DOcean,DomainOffensive,Domeneshop,Dreamhost,DuckDNS,Dynu,EasyDNS,Easyname,FreeDNS,Gandi,GCloud,Google,GoDaddy,Hetzner,HostingDe,HurricaneElectric,IBMSoftLayer,Infoblox,Infomaniak,IONOS,ISPConfig,LeaseWeb,Linode,Loopia,LuaDns,Manual,Namecheap,NameCom,NS1,OVH,PointDNS,Porkbun,PortsManagement,Rackspace,Regru,RFC2136,Route53,Selectel,SimpleDNSPlus,Simply,SSHProxy,TotalUptime,UKFast,Windows,Yandex,Zilore,Zonomi
   #read more here: https://poshac.me/docs/v4/Plugins/
+  #you can also use WR for WebRoot
   $plugins = "Hetzner,Hetzner"
   #if you need different plugins for multiple domains
   # $plugins = "Hetzner,Cloudflare,Hetzner,Cloudflare"
+
+  #if using WebRoot
+  # $WRPath = 'C:\inetpun\wwwroot';
 
   #your plugin api keys (Uncomment for your needs)
   # $token_AcmeDns = 'xxxxxx'
@@ -146,7 +152,11 @@ if((Get-PACertificate $certNames[0]).Subject.count -eq 0){
         }
       } else {
         Write-Error "No DNS-Plugin specified"
-        exit
+      }
+    }
+    if ($plugins -contains "WebRoot") {
+      $pArgs += @{
+        "WRPath" = $WRPath
       }
     }
     if ($null -ne $tokens){
